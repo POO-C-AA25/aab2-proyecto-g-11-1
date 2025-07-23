@@ -1,9 +1,11 @@
 package Modelo;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public abstract class Gasto {
-
+public abstract class Gasto implements Serializable{
+    private static final long serialVersionUID = 1L;
+    
     protected double monto;
     protected String descripcion;
     protected LocalDate fecha;

@@ -2,78 +2,153 @@ package Controlador;
 
 import Modelo.*;
 import Vista.VistaConsola;
+import Persistencia.PersistenciaContribuyente;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ControladorImpuestos {
 
     private final VistaConsola vista;
-    private Contribuyente contribuyente;
+    private final PersistenciaContribuyente persistencia;
+    private List<Contribuyente> contribuyentes;
+    private Contribuyente contribuyenteActual;
 
     public ControladorImpuestos(VistaConsola vista) {
         this.vista = vista;
+        this.persistencia = new PersistenciaContribuyente();
+        this.contribuyentes = cargarDatosIniciales();
     }
 
     public void iniciar() {
+        vista.mostrarMensaje("\n=== SISTEMA DE DECLARACION DE IMPUESTOS ===");
+        vista.mostrarMensaje("Contribuyentes cargados: " + contribuyentes.size());
+
         int opcion;
         do {
-            vista.mostrarMenu();
+            mostrarMenuPrincipal();
             opcion = vista.leerOpcion();
+            procesarOpcion(opcion);
+        } while (opcion != 7);
 
-            try {
-                switch (opcion) {
-                    case 1:
-                        registrarContribuyente();
-                        break;
-                    case 2:
-                        agregarSueldo();
-                        break;
-                    case 3:
-                        agregarGasto();
-                        break;
-                    case 4:
-                        generarDeclaracion();
-                        break;
-                    case 5:
-                        vista.mostrarMensaje("Saliendo del sistema...");
-                        break;
-                    default:
-                        vista.mostrarError("Opción no válida");
-                }
-            } catch (Exception e) {
-                vista.mostrarError(e.getMessage());
-            }
-        } while (opcion != 5);
+        guardarDatos();
+        vista.mostrarMensaje("\n¡Datos guardados correctamente!");
     }
 
-    private void registrarContribuyente() {
+    private List<Contribuyente> cargarDatosIniciales() {
+        List<Contribuyente> datos = persistencia.cargarContribuyentes();
+        return (datos != null) ? datos : new ArrayList<>();
+    }
+
+    private void mostrarMenuPrincipal() {
+        vista.mostrarMensaje("\n=== MENU PRINCIPAL ===");
+        vista.mostrarMensaje("1. Registrar nuevo contribuyente");
+        vista.mostrarMensaje("2. Seleccionar contribuyente");
+        vista.mostrarMensaje("3. Agregar sueldo");
+        vista.mostrarMensaje("4. Agregar gasto deducible");
+        vista.mostrarMensaje("5. Generar declaracion de impuestos");
+        vista.mostrarMensaje("6. Mostrar todos los contribuyentes");
+        vista.mostrarMensaje("7. Salir");
+        vista.mostrarMensaje("Seleccione una opcion: ");
+    }
+
+    private void procesarOpcion(int opcion) {
+        switch (opcion) {
+            case 1:
+                registrarNuevoContribuyente();
+                break;
+            case 2:
+                seleccionarContribuyente();
+                break;
+            case 3:
+                agregarSueldo();
+                break;
+            case 4:
+                agregarGasto();
+                break;
+            case 5:
+                generarDeclaracion();
+                break;
+            case 6:
+                mostrarContribuyentes();
+                break;
+            case 7:
+                vista.mostrarMensaje("Saliendo del sistema...");
+                break;
+            default:
+                vista.mostrarMensaje("¡Opcion no valida!");
+        }
+    }
+
+    private void guardarDatos() {
+        if (contribuyenteActual != null && !contribuyentes.contains(contribuyenteActual)) {
+            contribuyentes.add(contribuyenteActual);
+        }
+        persistencia.guardarContribuyentes(contribuyentes);
+    }
+
+    private void registrarNuevoContribuyente() {
         String[] datos = vista.leerDatosContribuyente();
-        contribuyente = new Contribuyente(datos[0], datos[1]);
-        vista.mostrarMensaje("Contribuyente registrado exitosamente");
+        Contribuyente nuevo = new Contribuyente(datos[0], datos[1]);
+        contribuyentes.add(nuevo);
+        contribuyenteActual = nuevo;
+        vista.mostrarMensaje("\nContribuyente registrado: " + nuevo.getNombre());
+    }
+
+    private void seleccionarContribuyente() {
+        if (contribuyentes.isEmpty()) {
+            vista.mostrarMensaje("No hay contribuyentes registrados.");
+            return;
+        }
+
+        vista.mostrarMensaje("\n=== CONTRIBUYENTES REGISTRADOS ===");
+        for (int i = 0; i < contribuyentes.size(); i++) {
+            vista.mostrarMensaje((i + 1) + ". " + contribuyentes.get(i).getNombre());
+        }
+
+        vista.mostrarMensaje("Seleccione un contribuyente (numero): ");
+        int seleccion = vista.leerOpcion() - 1;
+
+        if (seleccion >= 0 && seleccion < contribuyentes.size()) {
+            contribuyenteActual = contribuyentes.get(seleccion);
+            vista.mostrarMensaje("Seleccionado: " + contribuyenteActual.getNombre());
+        } else {
+            vista.mostrarMensaje("Seleccion invalida.");
+        }
+    }
+
+    private void mostrarContribuyentes() {
+        if (contribuyentes.isEmpty()) {
+            vista.mostrarMensaje("No hay contribuyentes registrados.");
+            return;
+        }
+
+        vista.mostrarMensaje("\n=== LISTA DE CONTRIBUYENTES ===");
+        contribuyentes.forEach(c -> vista.mostrarMensaje(
+                "Nombre: " + c.getNombre()
+                + "  Cedula: " + c.getCedula()
+                + "  Sueldos: " + c.calcularIngresoAnual()
+        ));
     }
 
     private void agregarSueldo() {
-        if (contribuyente == null) {
-            vista.mostrarError("Debe registrar un contribuyente primero");
-            return;
-        }
-
         double[] datos = vista.leerDatosSueldo();
-        contribuyente.agregarSueldo(datos[1]);
-        vista.mostrarMensaje("Sueldo del mes " + (int) datos[0] + " agregado");
+        int mes = (int) datos[0];
+        double monto = datos[1];
+        contribuyenteActual.agregarSueldo(monto);
     }
 
     private void agregarGasto() {
-        if (contribuyente == null) {
-            vista.mostrarError("Debe registrar un contribuyente primero");
-            return;
-        }
-
-        Object[] datos = vista.leerDatosGasto();
+        validarContribuyenteSeleccionado();
+        Object[] datosGasto = vista.leerDatosGasto();
         Gasto gasto = crearGasto(
-                (int) datos[0], (double) datos[1], (String) datos[2], (LocalDate) datos[3]
+                (int) datosGasto[0],
+                (double) datosGasto[1],
+                (String) datosGasto[2],
+                (LocalDate) datosGasto[3]
         );
-        contribuyente.agregarGasto(gasto);
-        vista.mostrarMensaje("Gasto de " + gasto.categoria() + " agregado");
+        contribuyenteActual.agregarGasto(gasto);
+        vista.mostrarMensaje("Gasto agregado (" + gasto.categoria() + ")");
     }
 
     private Gasto crearGasto(int tipo, double monto, String descripcion, LocalDate fecha) {
@@ -91,21 +166,25 @@ public class ControladorImpuestos {
             case 6:
                 return new Turismo(monto, descripcion, fecha);
             default:
-                throw new IllegalArgumentException("Tipo de gasto no válido");
+                throw new IllegalArgumentException("Tipo de gasto no valido");
         }
     }
 
     private void generarDeclaracion() {
-        if (contribuyente == null) {
-            vista.mostrarError("Debe registrar un contribuyente primero");
-            return;
-        }
+        validarContribuyenteSeleccionado();
+        validarDatosMinimos();
+        vista.mostrarMensaje("\n" + contribuyenteActual.generarDeclaracion());
+    }
 
-        if (contribuyente.calcularIngresoAnual() == 0) {
-            vista.mostrarError("Debe agregar sueldos primero");
-            return;
+    private void validarContribuyenteSeleccionado() {
+        if (contribuyenteActual == null) {
+            throw new IllegalStateException("Debe seleccionar un contribuyente primero");
         }
+    }
 
-        vista.mostrarDeclaracion(contribuyente.generarDeclaracion());
+    private void validarDatosMinimos() {
+        if (contribuyenteActual.calcularIngresoAnual() == 0) {
+            throw new IllegalStateException("Debe registrar sueldos para generar la declaracion");
+        }
     }
 }

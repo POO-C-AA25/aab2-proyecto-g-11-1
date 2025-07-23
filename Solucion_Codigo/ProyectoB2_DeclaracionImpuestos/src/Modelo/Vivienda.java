@@ -1,9 +1,11 @@
 package Modelo;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 
-public class Vivienda extends Gasto {
-
+public class Vivienda extends Gasto implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private static final double MAX_DEDUCCION = 10000.0;
 
     public Vivienda(double monto, String descripcion, LocalDate fecha) {

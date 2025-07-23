@@ -1,10 +1,12 @@
 package Modelo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TablaImpuestos {
-
+public class TablaImpuestos implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final List<Rango> rangos;
 
     public TablaImpuestos() {

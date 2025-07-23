@@ -1,7 +1,10 @@
 package Modelo;
 
-public class Rango {
+import java.io.Serializable;
 
+public class Rango implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final double desde;
     private final double hasta;
     private final double fraccionBasica;

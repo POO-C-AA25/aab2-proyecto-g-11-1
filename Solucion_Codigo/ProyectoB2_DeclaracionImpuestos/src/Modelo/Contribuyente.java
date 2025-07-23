@@ -1,10 +1,12 @@
 package Modelo;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Contribuyente extends Persona {
-
+public class Contribuyente extends Persona implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final List<Double> sueldos;
     private final List<Gasto> gastos;
     private final TablaImpuestos tablaImpuestos;
